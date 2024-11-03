@@ -25,4 +25,5 @@ jobs:
           echo "::set-output name=latest::$latest_tag"
 
       - name: Print latest tag
-        run: echo "Latest tag is: ${{ steps.get_latest_tag.outputs.latest }}"
+        run: |
+          echo "Latest tag is: ${{ steps.get_latest_tag.outputs.latest }}"
