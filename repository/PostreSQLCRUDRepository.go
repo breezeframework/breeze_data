@@ -80,7 +80,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetAll(ctx context.Context) (*[]T, erro
 	return objs, err
 }
 
-func (repo *PostgreSQLCRUDRepository[T]) GetWhere(ctx context.Context, where sq.Eq) (*[]T, error) {
+func (repo *PostgreSQLCRUDRepository[T]) GetBy(ctx context.Context, where sq.Eq) (*[]T, error) {
 	var err error
 	defer func() {
 		if r := recover(); r != nil {
