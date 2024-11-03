@@ -49,7 +49,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetById(ctx context.Context, id int64) 
 	return repo.scanner(row)
 }
 
-func convertToObjects[T any](rows pgx.Rows, scanner func(pgx.Row) (*T, error)) (*[]T, error) {
+func ConvertToObjects[T any](rows pgx.Rows, scanner func(pgx.Row) (*T, error)) (*[]T, error) {
 	var objs []T
 	for rows.Next() {
 		obj, err := scanner(rows)
@@ -72,7 +72,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetAll(ctx context.Context) (*[]T, erro
 		}
 	}()
 	rows := repo.dbConnection.QueryContextSelect(ctx, &repo.selectBuilder, nil)
-	objs, err := convertToObjects(rows, repo.scanner)
+	objs, err := ConvertToObjects(rows, repo.scanner)
 	return objs, err
 }
 
