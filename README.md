@@ -1,1 +1,1 @@
-# breeze_data
+# Golang module for CRUD database operations management

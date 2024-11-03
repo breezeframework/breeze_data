@@ -5,35 +5,13 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/breezeframework/breeze_data/client/db"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
 
 const (
-	WebPageTableName               = "WebPage"
-	NoteTableName                  = "Note"
-	UsersTableName                 = "Users"
-	JoinWebPage                    = "WebPage ON webpage.id = webpage_id"
-	JoinUser                       = "Users ON users.id = user_id"
-	idColumn                       = "id"
-	notesCountColumn               = "notes_count"
-	urlColumn                      = "url"
-	userIdColumn                   = "user_id"
-	userKeyColumn                  = "user_key"
-	userSNColumn                   = "user_sn"
-	webpageIdColumn                = "webpage_Id"
-	webpageURLColumn               = "url"
-	contentColumn                  = "content"
-	trustColumn                    = "trust"
-	createdAtColumn                = "created_at"
-	updatedAtColumn                = "updated_at"
-	QUERY_NAME_CREATE_NOTE         = "NoteRepository.CreateNote"
-	QUERY_NAME_GET_NOTES           = "NoteRepository.GetAllNotes"
-	QUERY_NAME_GET_NOTE_BY_URL     = "NoteRepository.GetNoteByURL"
-	QUERY_NAME_GET_NOTE_BY_ID      = "NoteRepository.GetNoteById"
-	QUERY_NAME_CREATE_WEBPAGE      = "NoteRepository.CreateWebPage"
-	QUERY_NAME_GET_WEB_PAGE_BY_URL = "NoteRepository.GetNoteByURL"
-	QUERY_NAME_GET_WEB_PAGE_BY_ID  = "NoteRepository.GetNoteById"
-	RETURNING_ID                   = "RETURNING id"
+	idColumn     = "id"
+	RETURNING_ID = "RETURNING id"
 )
 
 type PostgreSQLCRUDRepository[T any] struct {
@@ -57,7 +35,7 @@ func NewPostgreSQLCRUDRepository[T any](
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) Create(ctx context.Context, entity T) (int64, error) {
-	builder := repo.insertBuilder.Suffix(RETURNING_ID)
+	builder := repo.insertBuilder.Suffix(RETURNING_ID).Values(entity)
 	var id int64
 	err := repo.dbConnection.QueryRowContextInsert(ctx, &builder).Scan(&id)
 	return id, err
