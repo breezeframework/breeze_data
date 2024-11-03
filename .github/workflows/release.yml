@@ -24,6 +24,32 @@ jobs:
           latest_tag=$(git tag | tail -n 1)
           echo "::set-output name=latest::$latest_tag"
 
-      - name: Print latest tag
+      - name: Increment version
+        id: increment_version
         run: |
-          echo "Latest tag is: ${{ steps.get_latest_tag.outputs.latest }}"
+          # Извлечь текущий тег
+          current_tag="${{ steps.get_latest_tag.outputs.latest }}"
+          echo "Current tag is: $current_tag"
+
+          # Парсинг тега
+          IFS='.' read -r major minor patch <<< "${current_tag#v}"
+          
+          # Инкрементирование патч-версии
+          patch=$((patch + 1))
+          
+          # Создание нового тега
+          new_tag="v$major.$minor.$patch"
+          echo "New tag will be: $new_tag"
+
+          # Установка нового тега в выход
+          echo "::set-output name=new_tag::$new_tag"
+
+      - name: Create a new tag
+        run: |
+          new_tag="${{ steps.increment_version.outputs.new_tag }}"
+          git tag $new_tag
+          git push origin $new_tag
+
+      - name: Print new tag
+        run: |
+          echo "Created new tag: ${{ steps.increment_version.outputs.new_tag }}"
