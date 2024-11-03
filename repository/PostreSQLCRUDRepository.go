@@ -80,6 +80,19 @@ func (repo *PostgreSQLCRUDRepository[T]) GetAll(ctx context.Context) (*[]T, erro
 	return objs, err
 }
 
+func (repo *PostgreSQLCRUDRepository[T]) GetWhere(ctx context.Context, where sq.Eq) (*[]T, error) {
+	var err error
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("%v", r))
+		}
+	}()
+	builder := repo.selectBuilder.Where(where)
+	rows := repo.dbConnection.QueryContextSelect(ctx, &builder, nil)
+	objs, err := repo.ConvertToObjects(rows)
+	return objs, err
+}
+
 func (repo *PostgreSQLCRUDRepository[T]) Delete(ctx context.Context, id int64) error {
 	panic("implement me")
 }
