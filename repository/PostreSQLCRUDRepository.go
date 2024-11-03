@@ -23,13 +23,17 @@ type PostgreSQLCRUDRepository[T any] struct {
 	scanner       func(row pgx.Row) (*T, error)
 }
 
+func (repo *PostgreSQLCRUDRepository[T]) GetDbConnection() db.DBConnection {
+	return repo.dbConnection
+}
+
 func NewPostgreSQLCRUDRepository[T any](
 	dbConnection db.DBConnection,
 	insertBuilder sq.InsertBuilder,
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,
 	deleteBuilder sq.DeleteBuilder,
-	scanner func(pgx.Row) (*T, error)) *PostgreSQLCRUDRepository[T] {
+	scanner func(pgx.Row) (*T, error)) CrudRepository[T] {
 	return &PostgreSQLCRUDRepository[T]{
 		dbConnection:  dbConnection,
 		insertBuilder: insertBuilder, selectBuilder: selectBuilder, updateBuilder: updateBuilder, deleteBuilder: deleteBuilder,
