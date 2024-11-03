@@ -1,1 +1,1 @@
-module breeze_data
+module github.com/breezeframework/breeze_data
