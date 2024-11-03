@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/breezeframework/breeze_data/client/db"
 	"github.com/breezeframework/breeze_data/client/db/pg"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
 
