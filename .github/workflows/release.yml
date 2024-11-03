@@ -1,23 +1,22 @@
-name: Increment and Push Tag
+name: Create Tag
 
 on:
   push:
     branches:
-      - main
+      - main  # Укажите вашу основную ветку
 
 jobs:
-  tag:
+  create-tag:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Чтобы получить все теги
 
       - name: Get latest tag
         id: get_latest_tag
         run: |
+          git fetch --tags
           latest_tag=$(git describe --tags `git rev-list --tags --max-count=1 2>/dev/null`)
           if [ -z "$latest_tag" ]; then
             echo "No tags found. Starting from v0.1.0."
@@ -26,19 +25,17 @@ jobs:
           echo "Latest tag is: $latest_tag"
           echo "::set-output name=latest::$latest_tag"
 
-      - name: Increment version
+      - name: Increment tag version
         id: increment_version
         run: |
-          IFS='.' read -r major minor patch <<< "${{ steps.get_latest_tag.outputs.latest }}"
-          new_patch=$((patch + 1))
-          new_tag="${major}.${minor}.${new_patch}"
+          current_tag=${{ steps.get_latest_tag.outputs.latest }}
+          new_tag=$(echo $current_tag | awk -F. -v OFS=. '{$NF++;print}')
           echo "New tag is: $new_tag"
           echo "::set-output name=new_tag::$new_tag"
 
-      - name: Create new tag
+      - name: Create and push new tag
         run: |
-          echo "Creating new tag: ${{ steps.increment_version.outputs.new_tag }}"
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.increment_version.outputs.new_tag }}
-          git push origin ${{ steps.increment_version.outputs.new_tag }}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/breezeframework/breeze_data.git ${{ steps.increment_version.outputs.new_tag }}
