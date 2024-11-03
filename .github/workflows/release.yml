@@ -58,8 +58,8 @@ jobs:
           git tag $new_tag
           
           # Пуш нового тега с использованием токена
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/breezeframework/breeze_data.git $new_tag
-      
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/breezeframework/breeze_data.git $new_tag
+
 
       - name: Print new tag
         run: |
