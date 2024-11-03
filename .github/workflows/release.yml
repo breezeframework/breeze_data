@@ -57,8 +57,9 @@ jobs:
           # Создание нового тега
           git tag $new_tag
           
-          # Пуш нового тега
+          # Пуш нового тега с использованием токена
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/breezeframework/breeze_data.git $new_tag
+      
 
       - name: Print new tag
         run: |
