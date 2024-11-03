@@ -45,10 +45,20 @@ jobs:
           echo "::set-output name=new_tag::$new_tag"
 
       - name: Create a new tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           new_tag="${{ steps.increment_version.outputs.new_tag }}"
+          
+          # Настройка имени пользователя и электронной почты
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Создание нового тега
           git tag $new_tag
-          git push origin $new_tag
+          
+          # Пуш нового тега
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/breezeframework/breeze_data.git $new_tag
 
       - name: Print new tag
         run: |
