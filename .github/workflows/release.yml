@@ -27,8 +27,11 @@ jobs:
         id: increment_version
         run: |
           # Удаляем префикс 'v' и разбиваем по точке
-          IFS='.' read -r major minor patch <<< "${{ steps.get_latest_tag.outputs.latest#v }}"
-          # Увеличиваем патч на 1
+          tag_without_v="${{ steps.get_latest_tag.outputs.latest }}"
+          major=${tag_without_v%%.*}
+          minor=${tag_without_v#*.}
+          minor=${minor%%.*}
+          patch=${tag_without_v##*.}
           new_patch=$((patch + 1))
           # Формируем новый тег
           new_tag="v${major}.${minor}.${new_patch}"
