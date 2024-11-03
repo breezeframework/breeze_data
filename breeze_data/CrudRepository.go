@@ -1,9 +1,9 @@
-package repository
+package breeze_data
 
 import (
 	"context"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/breezeframework/breeze_data/client/db"
+	"github.com/breezeframework/breeze_data/db"
 )
 
 type CrudRepository[T any] interface {

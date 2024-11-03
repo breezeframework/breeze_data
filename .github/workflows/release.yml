@@ -9,7 +9,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout breeze_data
         uses: actions/checkout@v2
 
       - name: Set up SSH key

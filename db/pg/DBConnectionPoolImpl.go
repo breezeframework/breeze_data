@@ -2,7 +2,7 @@ package pg
 
 import (
 	"context"
-	"github.com/breezeframework/breeze_data/client/db"
+	"github.com/breezeframework/breeze_data/db"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
