@@ -1,4 +1,4 @@
-name: Increment and Push Tag
+name: CI
 
 on:
   push:
@@ -6,40 +6,60 @@ on:
       - main
 
 jobs:
-  tag:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: List tags
+        run: git tag
 
       - name: Get latest tag
         id: get_latest_tag
         run: |
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "Latest tag is: $latest_tag"
+          latest_tag=$(git tag | tail -n 1)
           echo "::set-output name=latest::$latest_tag"
 
       - name: Increment version
         id: increment_version
         run: |
-          IFS='.' read -r major minor patch <<< "${{ steps.get_latest_tag.outputs.latest }}"
-          new_patch=$((patch + 1))
-          new_tag="${major}.${minor}.${new_patch}"
-          echo "New tag is: $new_tag"
+          # Извлечь текущий тег
+          current_tag="${{ steps.get_latest_tag.outputs.latest }}"
+          echo "Current tag is: $current_tag"
+
+          # Парсинг тега
+          IFS='.' read -r major minor patch <<< "${current_tag#v}"
+          
+          # Инкрементирование патч-версии
+          patch=$((patch + 1))
+          
+          # Создание нового тега
+          new_tag="v$major.$minor.$patch"
+          echo "New tag will be: $new_tag"
+
+          # Установка нового тега в выход
           echo "::set-output name=new_tag::$new_tag"
 
-      - name: Create new tag
+      - name: Create a new tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Creating new tag: ${{ steps.increment_version.outputs.new_tag }}"
+          new_tag="${{ steps.increment_version.outputs.new_tag }}"
+          
+           # Настройка имени пользователя и электронной почты
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.increment_version.outputs.new_tag }}
-          git push git@github.com:breezeframework/breeze_data.git ${{ steps.increment_version.outputs.new_tag }}
+          
+          # Создание нового тега
+          git tag $new_tag
+          
+          # Пуш нового тега с использованием SSH
+          git push git@github.com:breezeframework/breeze_data.git $new_tag
+
+      - name: Print new tag
+        run: |
+          echo "Created new tag: ${{ steps.increment_version.outputs.new_tag }}"
