@@ -22,13 +22,18 @@ jobs:
       - name: Get latest tag
         id: get_latest_tag
         run: |
+          # Получаем последний тег
           latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null)
+          
+          # Проверяем, если тег не найден, то устанавливаем начальное значение
           if [ -z "$latest_tag" ]; then
             echo "No tags found. Starting from v0.1.0."
             latest_tag="v0.1.0"
           fi
+      
           echo "Latest tag is: $latest_tag"
           echo "latest=$latest_tag" >> $GITHUB_ENV
+
 
       - name: Create new tag
         run: |
