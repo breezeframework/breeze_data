@@ -1,4 +1,4 @@
-name: Create Tag
+name: Release
 
 on:
   push:
@@ -6,15 +6,20 @@ on:
       - main
 
 jobs:
-  create_tag:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Загружает все теги и историю коммитов
 
-      - name: Get the latest tag
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Get latest tag
         id: get_latest_tag
         run: |
           latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null)
@@ -25,25 +30,8 @@ jobs:
           echo "Latest tag is: $latest_tag"
           echo "latest=$latest_tag" >> $GITHUB_ENV
 
-      - name: Increment the version
-        id: increment_version
+      - name: Create new tag
         run: |
-          tag_without_v="${{ env.latest }}"
-          major=${tag_without_v%%.*}
-          minor=${tag_without_v#*.}
-          minor=${minor%%.*}
-          patch=${tag_without_v##*.}
-          new_patch=$((patch + 1))
-          new_tag="v${major}.${minor}.${new_patch}"
-          echo "New tag will be: $new_tag"
-          echo "new_tag=$new_tag" >> $GITHUB_ENV
-
-      - name: Set up Git
-        run: |
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Push new tag
-        run: |
-            git tag ${{ env.new_tag }}
-            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/breezeframework/breeze_data.git ${{ env.new_tag }}
+          new_tag="v$(echo ${{ env.latest }} | awk -F. -v OFS=. '{$NF++; print}')"
+          git tag $new_tag
+          git push git@github.com:breezeframework/breeze_data.git $new_tag
