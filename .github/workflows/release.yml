@@ -1,4 +1,4 @@
-name: Auto Tag
+name: CI
 
 on:
   push:
@@ -6,32 +6,23 @@ on:
       - main
 
 jobs:
-  tag:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: List tags
+        run: git tag
 
       - name: Get latest tag
-        id: tag
+        id: get_latest_tag
         run: |
-          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-
+          latest_tag=$(git tag | tail -n 1)
           echo "::set-output name=latest::$latest_tag"
 
-      - name: Bump version and create new tag
-        env:
-          LATEST_TAG: ${{ steps.tag.outputs.latest }}
-        run: |
-          # Extract version numbers
-          IFS=. read major minor patch <<<"${LATEST_TAG#v}"
-          new_patch=$((patch + 1))
-          new_version="v${major}.${minor}.${new_patch}"
-          
-          # Set Git user
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create tag and push
-          git tag $new_version
-          git push origin $new_version
+      - name: Print latest tag
+        run: echo "Latest tag is: ${{ steps.get_latest_tag.outputs.latest }}"
