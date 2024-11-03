@@ -1,4 +1,4 @@
-name: Tag and Push
+name: Create Tag
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  tag:
+  create_tag:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -24,19 +23,26 @@ jobs:
           echo "Latest tag is: $latest_tag"
           echo "::set-output name=latest::$latest_tag"
 
-      - name: Increment version
+      - name: Increment the version
         id: increment_version
         run: |
-          new_tag=$(echo "${{ steps.get_latest_tag.outputs.latest }}" | awk -F. -v OFS=. '{$NF++; print}')
-          echo "Creating new tag: $new_tag"
+          # Удаляем префикс 'v' и разбиваем по точке
+          IFS='.' read -r major minor patch <<< "${{ steps.get_latest_tag.outputs.latest#v }}"
+          # Увеличиваем патч на 1
+          new_patch=$((patch + 1))
+          # Формируем новый тег
+          new_tag="v${major}.${minor}.${new_patch}"
+          echo "New tag will be: $new_tag"
           echo "::set-output name=new_tag::$new_tag"
 
-      - name: Configure git
+      - name: Set up Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create and push new tag
+      - name: Create new tag
         run: |
           git tag ${{ steps.increment_version.outputs.new_tag }}
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/breezeframework/breeze_data.git ${{ steps.increment_version.outputs.new_tag }}
+          git push origin ${{ steps.increment_version.outputs.new_tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
