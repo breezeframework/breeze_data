@@ -21,22 +21,20 @@ jobs:
             latest_tag="v0.1.0"
           fi
           echo "Latest tag is: $latest_tag"
-          echo "::set-output name=latest::$latest_tag"
+          echo "latest=$latest_tag" >> $GITHUB_ENV
 
       - name: Increment the version
         id: increment_version
         run: |
-          # Удаляем префикс 'v' и разбиваем по точке
-          tag_without_v="${{ steps.get_latest_tag.outputs.latest }}"
+          tag_without_v="${{ env.latest }}"
           major=${tag_without_v%%.*}
           minor=${tag_without_v#*.}
           minor=${minor%%.*}
           patch=${tag_without_v##*.}
           new_patch=$((patch + 1))
-          # Формируем новый тег
           new_tag="v${major}.${minor}.${new_patch}"
           echo "New tag will be: $new_tag"
-          echo "::set-output name=new_tag::$new_tag"
+          echo "new_tag=$new_tag" >> $GITHUB_ENV
 
       - name: Set up Git
         run: |
@@ -45,7 +43,7 @@ jobs:
 
       - name: Create new tag
         run: |
-          git tag ${{ steps.increment_version.outputs.new_tag }}
-          git push origin ${{ steps.increment_version.outputs.new_tag }}
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
