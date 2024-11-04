@@ -18,17 +18,17 @@ const (
 	TxKey key = "tx"
 )
 
-type DBConnectionImpl struct {
+type PostgreDBConnection struct {
 	connectionPool *pgxpool.Pool
 }
 
-func NewDBConnection(pool *pgxpool.Pool) db.DBConnection {
-	return &DBConnectionImpl{
+func NewPostgreDBConnection(pool *pgxpool.Pool) *PostgreDBConnection {
+	return &PostgreDBConnection{
 		connectionPool: pool,
 	}
 }
 
-/*func (p *DBConnectionImpl) ScanOneContext(ctx context.Context, dest base{}, q *sq.UserSelectBuilder) {
+/*func (p *PostgreDBConnection) ScanOneContext(ctx context.Context, dest base{}, q *sq.UserSelectBuilder) {
 	row := p.QueryContextSelect(ctx, q, nil)
 	err := pgxscan.ScanOne(dest, row)
 	if err != nil {
@@ -36,7 +36,7 @@ func NewDBConnection(pool *pgxpool.Pool) db.DBConnection {
 	}
 }
 
-func (p *DBConnectionImpl) ScanAllContext(ctx context.Context, dest base{}, q *sq.UserSelectBuilder) {
+func (p *PostgreDBConnection) ScanAllContext(ctx context.Context, dest base{}, q *sq.UserSelectBuilder) {
 	rows := p.QueryContextSelect(ctx, q, nil)
 	err := pgxscan.ScanAll(dest, rows)
 	if err != nil {
@@ -44,7 +44,7 @@ func (p *DBConnectionImpl) ScanAllContext(ctx context.Context, dest base{}, q *s
 	}
 }*/
 
-func (p *DBConnectionImpl) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.CommandTag {
+func (p *PostgreDBConnection) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.CommandTag {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		panic(err)
@@ -67,7 +67,7 @@ func (p *DBConnectionImpl) ExecUpdate(ctx context.Context, builder *sq.UpdateBui
 	return tag
 }
 
-func (p *DBConnectionImpl) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, where map[string]interface{}) pgx.Rows {
+func (p *PostgreDBConnection) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, where map[string]interface{}) pgx.Rows {
 	if where != nil {
 		builder.Where(where)
 	}
@@ -93,7 +93,7 @@ func (p *DBConnectionImpl) QueryContextSelect(ctx context.Context, builder *sq.S
 	return rows
 }
 
-func (p *DBConnectionImpl) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilder) pgx.Row {
+func (p *PostgreDBConnection) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilder) pgx.Row {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		panic(err)
@@ -110,7 +110,7 @@ func (p *DBConnectionImpl) QueryRowContextSelect(ctx context.Context, builder *s
 	return p.connectionPool.QueryRow(ctx, query, args...)
 }
 
-func (p *DBConnectionImpl) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilder) pgx.Row {
+func (p *PostgreDBConnection) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilder) pgx.Row {
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -128,7 +128,7 @@ func (p *DBConnectionImpl) QueryRowContextInsert(ctx context.Context, builder *s
 	return p.connectionPool.QueryRow(ctx, query, args...)
 }
 
-func (p *DBConnectionImpl) BeginTx(ctx context.Context, txOptions pgx.TxOptions) pgx.Tx {
+func (p *PostgreDBConnection) BeginTx(ctx context.Context, txOptions pgx.TxOptions) pgx.Tx {
 	tx, err := p.connectionPool.BeginTx(ctx, txOptions)
 	if err != nil {
 		panic(err)
@@ -136,11 +136,11 @@ func (p *DBConnectionImpl) BeginTx(ctx context.Context, txOptions pgx.TxOptions)
 	return tx
 }
 
-func (p *DBConnectionImpl) Ping(ctx context.Context) error {
+func (p *PostgreDBConnection) Ping(ctx context.Context) error {
 	return p.connectionPool.Ping(ctx)
 }
 
-func (p *DBConnectionImpl) Close() {
+func (p *PostgreDBConnection) Close() {
 	p.connectionPool.Close()
 }
 

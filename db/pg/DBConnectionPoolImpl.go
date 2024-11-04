@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type DBConnectionPoolImpl struct {
+type PostgreDBConnectionPool struct {
 	masterDBC db.DBConnection
 }
 
@@ -18,16 +18,16 @@ func NewConnectionPool(ctx context.Context, dsn string) (db.DBConnectionPool, er
 		return nil, errors.Errorf("failed to connect to db: %v", err)
 	}
 
-	return &DBConnectionPoolImpl{
-		masterDBC: &DBConnectionImpl{connectionPool: dbc},
+	return &PostgreDBConnectionPool{
+		masterDBC: &PostgreDBConnection{connectionPool: dbc},
 	}, nil
 }
 
-func (c *DBConnectionPoolImpl) GetConnection() db.DBConnection {
+func (c *PostgreDBConnectionPool) GetConnection() db.DBConnection {
 	return c.masterDBC
 }
 
-func (c *DBConnectionPoolImpl) Close() error {
+func (c *PostgreDBConnectionPool) Close() error {
 	if c.masterDBC != nil {
 		c.masterDBC.Close()
 	}
