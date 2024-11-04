@@ -2,42 +2,44 @@ package transaction
 
 import (
 	"context"
-	"github.com/breezeframework/breeze_data/db"
-	"github.com/breezeframework/breeze_data/db/pg"
-	"github.com/jackc/pgx/v5"
+
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
+
+	"github.com/igornem1/go_microservices/week_3/internal/client/db"
+	"github.com/igornem1/go_microservices/week_3/internal/client/db/pg"
 )
 
-type TxManagerImpl struct {
-	db  db.Transactor
-	ctx context.Context
+type manager struct {
+	db db.Transactor
 }
 
 // NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.TxManager
-func NewTransactionManager(ctx context.Context, db db.Transactor) db.TxManager {
-	return &TxManagerImpl{
-		db:  db,
-		ctx: ctx,
+func NewTransactionManager(db db.Transactor) db.TxManager {
+	return &manager{
+		db: db,
 	}
 }
 
 // transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции
-func (m *TxManagerImpl) transaction(opts pgx.TxOptions, fn db.Handler) {
+func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Handler) (err error) {
 	// Если это вложенная транзакция, пропускаем инициацию новой транзакции и выполняем обработчик.
-	tx, ok := m.ctx.Value(pg.TxKey).(pgx.Tx)
+	tx, ok := ctx.Value(pg.TxKey).(pgx.Tx)
 	if ok {
-		fn(m.ctx)
+		return fn(ctx)
 	}
 
 	// Стартуем новую транзакцию.
-	tx = m.db.BeginTx(m.ctx, opts)
+	tx, err = m.db.BeginTx(ctx, opts)
+	if err != nil {
+		return errors.Wrap(err, "can't begin transaction")
+	}
 
 	// Кладем транзакцию в контекст.
-	ctx := pg.MakeContextTx(m.ctx, tx)
+	ctx = pg.MakeContextTx(ctx, tx)
 
 	// Настраиваем функцию отсрочки для отката или коммита транзакции.
 	defer func() {
-		var err error
 		// восстанавливаемся после паники
 		if r := recover(); r != nil {
 			err = errors.Errorf("panic recovered: %v", r)
@@ -64,11 +66,14 @@ func (m *TxManagerImpl) transaction(opts pgx.TxOptions, fn db.Handler) {
 	// Выполните код внутри транзакции.
 	// Если функция терпит неудачу, возвращаем ошибку, и функция отсрочки выполняет откат
 	// или в противном случае транзакция коммитится.
-	fn(ctx)
+	if err = fn(ctx); err != nil {
+		err = errors.Wrap(err, "failed executing code inside transaction")
+	}
 
+	return err
 }
 
-func (m *TxManagerImpl) ReadCommitted(f db.Handler) {
-	txOpts := pgx.TxOptions{IsoLevel: pgx.ReadUncommitted}
-	m.transaction(txOpts, f)
+func (m *manager) ReadCommitted(ctx context.Context, f db.Handler) error {
+	txOpts := pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
+	return m.transaction(ctx, txOpts, f)
 }

@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/breezeframework/breeze_data/db"
-	"github.com/breezeframework/breeze_data/db/pg"
+	"github.com/breezeframework/breeze_data/client/db"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +15,7 @@ const (
 )
 
 type PostgreSQLCRUDRepository[T any] struct {
-	dbConnection    db.DBConnection
+	db              db.Client
 	insertBuilder   sq.InsertBuilder
 	selectBuilder   sq.SelectBuilder
 	updateBuilder   sq.UpdateBuilder
@@ -25,19 +23,15 @@ type PostgreSQLCRUDRepository[T any] struct {
 	entityConverter func(row pgx.Row) (*T, error)
 }
 
-func (repo *PostgreSQLCRUDRepository[T]) GetDbConnection() db.DBConnection {
-	return repo.dbConnection
-}
-
 func NewPostgreSQLCRUDRepository[T any](
-	dbConnection *pgxpool.Pool,
+	db db.Client,
 	insertBuilder sq.InsertBuilder,
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,
 	deleteBuilder sq.DeleteBuilder,
 	entityConverter func(pgx.Row) (*T, error)) CrudRepository[T] {
 	return &PostgreSQLCRUDRepository[T]{
-		dbConnection:  pg.NewPostgreDBConnection(dbConnection),
+		db:            db,
 		insertBuilder: insertBuilder, selectBuilder: selectBuilder, updateBuilder: updateBuilder, deleteBuilder: deleteBuilder,
 		entityConverter: entityConverter}
 }
@@ -45,13 +39,13 @@ func NewPostgreSQLCRUDRepository[T any](
 func (repo *PostgreSQLCRUDRepository[T]) Create(ctx context.Context, entity T) (int64, error) {
 	builder := repo.insertBuilder.Suffix(RETURNING_ID).Values(entity)
 	var id int64
-	err := repo.dbConnection.QueryRowContextInsert(ctx, &builder).Scan(&id)
+	err := repo.db.DB().QueryRowContextInsert(ctx, &builder).Scan(&id)
 	return id, err
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) GetById(ctx context.Context, id int64) (*T, error) {
 	builder := repo.selectBuilder.Where(sq.Eq{idColumn: id})
-	row := repo.dbConnection.QueryRowContextSelect(ctx, &builder)
+	row := repo.db.DB().QueryRowContextSelect(ctx, &builder)
 	return repo.entityConverter(row)
 }
 
@@ -77,7 +71,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetAll(ctx context.Context) (*[]T, erro
 			err = errors.New(fmt.Sprintf("%v", r))
 		}
 	}()
-	rows := repo.dbConnection.QueryContextSelect(ctx, &repo.selectBuilder, nil)
+	rows := repo.db.DB().QueryContextSelect(ctx, &repo.selectBuilder, nil)
 	objs, err := repo.ConvertToObjects(rows)
 	return objs, err
 }
@@ -90,7 +84,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetBy(ctx context.Context, where sq.Eq)
 		}
 	}()
 	builder := repo.selectBuilder.Where(where)
-	rows := repo.dbConnection.QueryContextSelect(ctx, &builder, nil)
+	rows := repo.db.DB().QueryContextSelect(ctx, &builder, nil)
 	objs, err := repo.ConvertToObjects(rows)
 	return objs, err
 }
