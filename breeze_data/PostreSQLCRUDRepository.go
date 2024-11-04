@@ -5,7 +5,9 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/breezeframework/breeze_data/db"
+	"github.com/breezeframework/breeze_data/db/pg"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
 )
 
@@ -28,14 +30,14 @@ func (repo *PostgreSQLCRUDRepository[T]) GetDbConnection() db.DBConnection {
 }
 
 func NewPostgreSQLCRUDRepository[T any](
-	dbConnection db.DBConnection,
+	dbConnection *pgxpool.Pool,
 	insertBuilder sq.InsertBuilder,
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,
 	deleteBuilder sq.DeleteBuilder,
 	scanner func(pgx.Row) (*T, error)) CrudRepository[T] {
 	return &PostgreSQLCRUDRepository[T]{
-		dbConnection:  dbConnection,
+		dbConnection:  pg.NewPostgreDBConnection(dbConnection),
 		insertBuilder: insertBuilder, selectBuilder: selectBuilder, updateBuilder: updateBuilder, deleteBuilder: deleteBuilder,
 		scanner: scanner}
 }

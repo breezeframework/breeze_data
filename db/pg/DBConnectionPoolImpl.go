@@ -19,7 +19,7 @@ func NewConnectionPool(ctx context.Context, dsn string) (db.DBConnectionPool, er
 	}
 
 	return &PostgreDBConnectionPool{
-		masterDBC: &PostgreDBConnection{connectionPool: dbc},
+		masterDBC: NewPostgreDBConnection(dbc),
 	}, nil
 }
 
