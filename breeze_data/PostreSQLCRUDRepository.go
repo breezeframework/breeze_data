@@ -17,12 +17,12 @@ const (
 )
 
 type PostgreSQLCRUDRepository[T any] struct {
-	dbConnection  db.DBConnection
-	insertBuilder sq.InsertBuilder
-	selectBuilder sq.SelectBuilder
-	updateBuilder sq.UpdateBuilder
-	deleteBuilder sq.DeleteBuilder
-	scanner       func(row pgx.Row) (*T, error)
+	dbConnection    db.DBConnection
+	insertBuilder   sq.InsertBuilder
+	selectBuilder   sq.SelectBuilder
+	updateBuilder   sq.UpdateBuilder
+	deleteBuilder   sq.DeleteBuilder
+	entityConverter func(row pgx.Row) (*T, error)
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) GetDbConnection() db.DBConnection {
@@ -35,11 +35,11 @@ func NewPostgreSQLCRUDRepository[T any](
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,
 	deleteBuilder sq.DeleteBuilder,
-	scanner func(pgx.Row) (*T, error)) CrudRepository[T] {
+	entityConverter func(pgx.Row) (*T, error)) CrudRepository[T] {
 	return &PostgreSQLCRUDRepository[T]{
 		dbConnection:  pg.NewPostgreDBConnection(dbConnection),
 		insertBuilder: insertBuilder, selectBuilder: selectBuilder, updateBuilder: updateBuilder, deleteBuilder: deleteBuilder,
-		scanner: scanner}
+		entityConverter: entityConverter}
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) Create(ctx context.Context, entity T) (int64, error) {
@@ -52,13 +52,13 @@ func (repo *PostgreSQLCRUDRepository[T]) Create(ctx context.Context, entity T) (
 func (repo *PostgreSQLCRUDRepository[T]) GetById(ctx context.Context, id int64) (*T, error) {
 	builder := repo.selectBuilder.Where(sq.Eq{idColumn: id})
 	row := repo.dbConnection.QueryRowContextSelect(ctx, &builder)
-	return repo.scanner(row)
+	return repo.entityConverter(row)
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) ConvertToObjects(rows pgx.Rows) (*[]T, error) {
 	var objs []T
 	for rows.Next() {
-		obj, err := repo.scanner(rows)
+		obj, err := repo.entityConverter(rows)
 		if err != nil {
 			return nil, err
 		}
