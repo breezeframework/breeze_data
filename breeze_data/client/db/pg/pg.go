@@ -3,14 +3,13 @@ package pg
 import (
 	"context"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db/prettier"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
-
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	"github.com/igornem1/go_microservices/week_3/internal/client/db"
-	"github.com/igornem1/go_microservices/week_3/internal/client/db/prettier"
 )
 
 type key string
@@ -23,13 +22,97 @@ type pg struct {
 	dbc *pgxpool.Pool
 }
 
+func (p *pg) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.CommandTag {
+	query, args, err := builder.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("[ExecUpdate] query: %s", query)
+	log.Printf("[ExecUpdate] args: %+v", args)
+	log.Printf("[ExecUpdate] err: %+v", err)
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	var tag pgconn.CommandTag
+	if ok {
+		tag, err = tx.Exec(ctx, query, args...)
+	} else {
+		tag, err = p.dbc.Exec(ctx, query, args...)
+	}
+	if err != nil {
+		log.Printf("err: %+v", err)
+		log.Panic(err)
+	}
+	return tag
+}
+
+func (p *pg) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, where map[string]interface{}) pgx.Rows {
+	if where != nil {
+		builder.Where(where)
+	}
+	query, args, err := builder.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Generated SQL query:", query)
+	fmt.Println("Arguments:", args)
+	fmt.Println("ctx:", ctx)
+	fmt.Println("ctx.Value(TxKey):", ctx.Value(TxKey))
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	var rows pgx.Rows
+	if ok {
+		rows, err = tx.Query(ctx, query, args...)
+	} else {
+		rows, err = p.dbc.Query(ctx, query, args...)
+	}
+	if err != nil {
+		panic(err)
+	}
+	return rows
+}
+
+func (p *pg) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilder) pgx.Row {
+	query, args, err := builder.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Generated SQL query:", query)
+	fmt.Println("Arguments:", args)
+
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	if ok {
+		return tx.QueryRow(ctx, query, args...)
+	}
+
+	return p.dbc.QueryRow(ctx, query, args...)
+}
+
+func (p *pg) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilder) pgx.Row {
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Generated SQL query:", query)
+	fmt.Println("Arguments:", args)
+
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	if ok {
+		return tx.QueryRow(ctx, query, args...)
+	}
+
+	return p.dbc.QueryRow(ctx, query, args...)
+}
+
 func NewDB(dbc *pgxpool.Pool) db.DB {
 	return &pg{
 		dbc: dbc,
 	}
 }
 
-func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+/*func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
 	logQuery(ctx, q, args...)
 
 	row, err := p.QueryContext(ctx, q, args...)
@@ -49,7 +132,7 @@ func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, a
 	}
 
 	return pgxscan.ScanAll(dest, rows)
-}
+}*/
 
 func (p *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
 	logQuery(ctx, q, args...)

@@ -2,11 +2,11 @@ package transaction
 
 import (
 	"context"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db/pg"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/pkg/errors"
-
-	"github.com/igornem1/go_microservices/week_3/internal/client/db"
-	"github.com/igornem1/go_microservices/week_3/internal/client/db/pg"
 )
 
 type manager struct {

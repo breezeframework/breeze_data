@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	PlaceholderDollar   = "$"
-	PlaceholderQuestion = "?"
+	PlaceholderDollar = "$"
 )
 
 func Pretty(query string, placeholder string, args ...any) string {

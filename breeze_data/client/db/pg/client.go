@@ -2,11 +2,10 @@ package pg
 
 import (
 	"context"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db"
+	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-
-	"github.com/igornem1/go_microservices/week_3/internal/client/db"
 )
 
 type pgClient struct {
@@ -14,7 +13,7 @@ type pgClient struct {
 }
 
 func New(ctx context.Context, dsn string) (db.Client, error) {
-	dbc, err := pgxpool.Connect(ctx, dsn)
+	dbc, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to db: %v", err)
 	}

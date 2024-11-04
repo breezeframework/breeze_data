@@ -41,8 +41,8 @@ type SQLExecer interface {
 
 // NamedExecer интерфейс для работы с именованными запросами с помощью тегов в структурах
 type NamedExecer interface {
-	ScanOneContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
-	ScanAllContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
+	/*ScanOneContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
+	ScanAllContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error*/
 }
 
 type QueryExecer interface {
