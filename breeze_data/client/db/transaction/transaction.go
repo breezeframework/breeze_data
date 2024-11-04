@@ -3,7 +3,6 @@ package transaction
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
 	"github.com/igornem1/go_microservices/week_3/internal/client/db"

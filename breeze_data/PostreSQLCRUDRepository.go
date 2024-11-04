@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/breezeframework/breeze_data/client/db"
+	"github.com/breezeframework/breeze_data/breeze_data/client/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
