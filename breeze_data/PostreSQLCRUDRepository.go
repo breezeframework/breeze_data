@@ -15,7 +15,7 @@ const (
 )
 
 type PostgreSQLCRUDRepository[T any] struct {
-	db              db.Client
+	db              db.DbClient
 	insertBuilder   sq.InsertBuilder
 	selectBuilder   sq.SelectBuilder
 	updateBuilder   sq.UpdateBuilder
@@ -24,7 +24,7 @@ type PostgreSQLCRUDRepository[T any] struct {
 }
 
 func NewPostgreSQLCRUDRepository[T any](
-	db db.Client,
+	db db.DbClient,
 	insertBuilder sq.InsertBuilder,
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,
@@ -39,13 +39,13 @@ func NewPostgreSQLCRUDRepository[T any](
 func (repo *PostgreSQLCRUDRepository[T]) Create(ctx context.Context, entity T) (int64, error) {
 	builder := repo.insertBuilder.Suffix(RETURNING_ID).Values(entity)
 	var id int64
-	err := repo.db.DB().QueryRowContextInsert(ctx, &builder).Scan(&id)
+	err := repo.db.API().QueryRowContextInsert(ctx, &builder).Scan(&id)
 	return id, err
 }
 
 func (repo *PostgreSQLCRUDRepository[T]) GetById(ctx context.Context, id int64) (*T, error) {
 	builder := repo.selectBuilder.Where(sq.Eq{idColumn: id})
-	row := repo.db.DB().QueryRowContextSelect(ctx, &builder)
+	row := repo.db.API().QueryRowContextSelect(ctx, &builder)
 	return repo.entityConverter(row)
 }
 
@@ -71,7 +71,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetAll(ctx context.Context) (*[]T, erro
 			err = errors.New(fmt.Sprintf("%v", r))
 		}
 	}()
-	rows := repo.db.DB().QueryContextSelect(ctx, &repo.selectBuilder, nil)
+	rows := repo.db.API().QueryContextSelect(ctx, &repo.selectBuilder, nil)
 	objs, err := repo.ConvertToObjects(rows)
 	return objs, err
 }
@@ -84,7 +84,7 @@ func (repo *PostgreSQLCRUDRepository[T]) GetBy(ctx context.Context, where sq.Eq)
 		}
 	}()
 	builder := repo.selectBuilder.Where(where)
-	rows := repo.db.DB().QueryContextSelect(ctx, &builder, nil)
+	rows := repo.db.API().QueryContextSelect(ctx, &builder, nil)
 	objs, err := repo.ConvertToObjects(rows)
 	return objs, err
 }

@@ -19,10 +19,10 @@ const (
 )
 
 type pg struct {
-	dbc *pgxpool.Pool
+	api *pgxpool.Pool
 }
 
-func (p *pg) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.CommandTag {
+func (pg *pg) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.CommandTag {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		panic(err)
@@ -36,7 +36,7 @@ func (p *pg) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.C
 	if ok {
 		tag, err = tx.Exec(ctx, query, args...)
 	} else {
-		tag, err = p.dbc.Exec(ctx, query, args...)
+		tag, err = pg.api.Exec(ctx, query, args...)
 	}
 	if err != nil {
 		log.Printf("err: %+v", err)
@@ -45,7 +45,7 @@ func (p *pg) ExecUpdate(ctx context.Context, builder *sq.UpdateBuilder) pgconn.C
 	return tag
 }
 
-func (p *pg) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, where map[string]interface{}) pgx.Rows {
+func (pg *pg) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, where map[string]interface{}) pgx.Rows {
 	if where != nil {
 		builder.Where(where)
 	}
@@ -63,7 +63,7 @@ func (p *pg) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, 
 	if ok {
 		rows, err = tx.Query(ctx, query, args...)
 	} else {
-		rows, err = p.dbc.Query(ctx, query, args...)
+		rows, err = pg.api.Query(ctx, query, args...)
 	}
 	if err != nil {
 		panic(err)
@@ -71,7 +71,7 @@ func (p *pg) QueryContextSelect(ctx context.Context, builder *sq.SelectBuilder, 
 	return rows
 }
 
-func (p *pg) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilder) pgx.Row {
+func (pg *pg) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilder) pgx.Row {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		panic(err)
@@ -85,10 +85,10 @@ func (p *pg) QueryRowContextSelect(ctx context.Context, builder *sq.SelectBuilde
 		return tx.QueryRow(ctx, query, args...)
 	}
 
-	return p.dbc.QueryRow(ctx, query, args...)
+	return pg.api.QueryRow(ctx, query, args...)
 }
 
-func (p *pg) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilder) pgx.Row {
+func (pg *pg) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilder) pgx.Row {
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -103,16 +103,16 @@ func (p *pg) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuilde
 		return tx.QueryRow(ctx, query, args...)
 	}
 
-	return p.dbc.QueryRow(ctx, query, args...)
+	return pg.api.QueryRow(ctx, query, args...)
 }
 
-func NewDB(dbc *pgxpool.Pool) db.DB {
+func NewDB(dbc *pgxpool.Pool) db.DbApi {
 	return &pg{
-		dbc: dbc,
+		api: dbc,
 	}
 }
 
-/*func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+/*func (pg *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
 	logQuery(ctx, q, args...)
 
 	row, err := p.QueryContext(ctx, q, args...)
@@ -123,7 +123,7 @@ func NewDB(dbc *pgxpool.Pool) db.DB {
 	return pgxscan.ScanOne(dest, row)
 }
 
-func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+func (pg *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
 	logQuery(ctx, q, args...)
 
 	rows, err := p.QueryContext(ctx, q, args...)
@@ -134,7 +134,7 @@ func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, a
 	return pgxscan.ScanAll(dest, rows)
 }*/
 
-func (p *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
+func (pg *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -142,10 +142,10 @@ func (p *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (
 		return tx.Exec(ctx, q.QueryRaw, args...)
 	}
 
-	return p.dbc.Exec(ctx, q.QueryRaw, args...)
+	return pg.api.Exec(ctx, q.QueryRaw, args...)
 }
 
-func (p *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{}) (pgx.Rows, error) {
+func (pg *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{}) (pgx.Rows, error) {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -153,10 +153,10 @@ func (p *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{}) 
 		return tx.Query(ctx, q.QueryRaw, args...)
 	}
 
-	return p.dbc.Query(ctx, q.QueryRaw, args...)
+	return pg.api.Query(ctx, q.QueryRaw, args...)
 }
 
-func (p *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{}) pgx.Row {
+func (pg *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{}) pgx.Row {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -164,19 +164,19 @@ func (p *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{
 		return tx.QueryRow(ctx, q.QueryRaw, args...)
 	}
 
-	return p.dbc.QueryRow(ctx, q.QueryRaw, args...)
+	return pg.api.QueryRow(ctx, q.QueryRaw, args...)
 }
 
-func (p *pg) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
-	return p.dbc.BeginTx(ctx, txOptions)
+func (pg *pg) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
+	return pg.api.BeginTx(ctx, txOptions)
 }
 
-func (p *pg) Ping(ctx context.Context) error {
-	return p.dbc.Ping(ctx)
+func (pg *pg) Ping(ctx context.Context) error {
+	return pg.api.Ping(ctx)
 }
 
-func (p *pg) Close() {
-	p.dbc.Close()
+func (pg *pg) Close() {
+	pg.api.Close()
 }
 
 func MakeContextTx(ctx context.Context, tx pgx.Tx) context.Context {

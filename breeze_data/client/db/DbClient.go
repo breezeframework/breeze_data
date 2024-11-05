@@ -7,14 +7,22 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Handler - функция, которая выполняется в транзакции
-type Handler func(ctx context.Context) error
-
-// Client клиент для работы с БД
-type Client interface {
-	DB() DB
+// DbClient клиент для работы с БД
+type DbClient interface {
+	API() DbApi
 	Close() error
 }
+
+// DbApi интерфейс для работы с БД
+type DbApi interface {
+	SQLExecer
+	Transactor
+	Pinger
+	Close()
+}
+
+// Handler - функция, которая выполняется в транзакции
+type Handler func(ctx context.Context) error
 
 // TxManager менеджер транзакций, который выполняет указанный пользователем обработчик в транзакции
 type TxManager interface {
@@ -55,12 +63,4 @@ type QueryExecer interface {
 // Pinger интерфейс для проверки соединения с БД
 type Pinger interface {
 	Ping(ctx context.Context) error
-}
-
-// DB интерфейс для работы с БД
-type DB interface {
-	SQLExecer
-	Transactor
-	Pinger
-	Close()
 }

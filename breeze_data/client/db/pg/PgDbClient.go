@@ -8,26 +8,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-type pgClient struct {
-	masterDBC db.DB
+type pgDbClient struct {
+	masterDBC db.DbApi
 }
 
-func New(ctx context.Context, dsn string) (db.Client, error) {
+func NewPgDBClient(ctx context.Context, dsn string) (db.DbClient, error) {
 	dbc, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to db: %v", err)
 	}
 
-	return &pgClient{
-		masterDBC: &pg{dbc: dbc},
+	return &pgDbClient{
+		masterDBC: &pg{api: dbc},
 	}, nil
 }
 
-func (c *pgClient) DB() db.DB {
+func (c *pgDbClient) API() db.DbApi {
 	return c.masterDBC
 }
 
-func (c *pgClient) Close() error {
+func (c *pgDbClient) Close() error {
 	if c.masterDBC != nil {
 		c.masterDBC.Close()
 	}
