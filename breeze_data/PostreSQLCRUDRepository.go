@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/breezeframework/breeze_data/breeze_data/client/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
@@ -15,7 +14,7 @@ const (
 )
 
 type PostgreSQLCRUDRepository[T any] struct {
-	db              db.DbClient
+	db              DbClient
 	insertBuilder   sq.InsertBuilder
 	selectBuilder   sq.SelectBuilder
 	updateBuilder   sq.UpdateBuilder
@@ -24,7 +23,7 @@ type PostgreSQLCRUDRepository[T any] struct {
 }
 
 func NewPostgreSQLCRUDRepository[T any](
-	db db.DbClient,
+	db DbClient,
 	insertBuilder sq.InsertBuilder,
 	selectBuilder sq.SelectBuilder,
 	updateBuilder sq.UpdateBuilder,

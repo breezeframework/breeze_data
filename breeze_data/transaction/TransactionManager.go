@@ -2,26 +2,26 @@ package transaction
 
 import (
 	"context"
-	"github.com/breezeframework/breeze_data/breeze_data/client/db"
-	"github.com/breezeframework/breeze_data/breeze_data/client/db/pg"
+	"github.com/breezeframework/breeze_data/breeze_data"
+	"github.com/breezeframework/breeze_data/breeze_data/pg"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/pkg/errors"
 )
 
-type manager struct {
-	db db.Transactor
+type TransactionManager struct {
+	db breeze_data.Transactor
 }
 
-// NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.TxManager
-func NewTransactionManager(db db.Transactor) db.TxManager {
-	return &manager{
+// NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.TransactionManager
+func NewTransactionManager(db breeze_data.Transactor) breeze_data.TxManager {
+	return &TransactionManager{
 		db: db,
 	}
 }
 
 // transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции
-func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Handler) (err error) {
+func (m *TransactionManager) transaction(ctx context.Context, opts pgx.TxOptions, fn breeze_data.Handler) (err error) {
 	// Если это вложенная транзакция, пропускаем инициацию новой транзакции и выполняем обработчик.
 	tx, ok := ctx.Value(pg.TxKey).(pgx.Tx)
 	if ok {
@@ -72,7 +72,7 @@ func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Han
 	return err
 }
 
-func (m *manager) ReadCommitted(ctx context.Context, f db.Handler) error {
+func (m *TransactionManager) ReadCommitted(ctx context.Context, f breeze_data.Handler) error {
 	txOpts := pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
 	return m.transaction(ctx, txOpts, f)
 }

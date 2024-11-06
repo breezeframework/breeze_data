@@ -1,4 +1,4 @@
-package db
+package breeze_data
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type DbClient interface {
 
 // DbApi интерфейс для работы с БД
 type DbApi interface {
-	SQLExecer
+	SQLExecutor
 	Transactor
 	Pinger
 	Close()
@@ -36,24 +36,22 @@ type Query struct {
 	QueryRaw string
 }
 
-// Transactor интерфейс для работы с транзакциями
 type Transactor interface {
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 }
 
-// SQLExecer комбинирует NamedExecer и QueryExecer
-type SQLExecer interface {
-	NamedExecer
-	QueryExecer
+type SQLExecutor interface {
+	NamedQueryExecutor
+	QueryExecutor
 }
 
-// NamedExecer интерфейс для работы с именованными запросами с помощью тегов в структурах
-type NamedExecer interface {
+// NamedQueryExecutor интерфейс для работы с именованными запросами с помощью тегов в структурах
+type NamedQueryExecutor interface {
 	/*ScanOneContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
 	ScanAllContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error*/
 }
 
-type QueryExecer interface {
+type QueryExecutor interface {
 	ExecUpdate(ctx context.Context, builder *squirrel.UpdateBuilder) pgconn.CommandTag
 	QueryContextSelect(ctx context.Context, builder *squirrel.SelectBuilder, where map[string]interface{}) pgx.Rows
 	QueryRowContextSelect(ctx context.Context, builder *squirrel.SelectBuilder) pgx.Row

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/breezeframework/breeze_data/breeze_data/client/db"
-	"github.com/breezeframework/breeze_data/breeze_data/client/db/prettier"
+	"github.com/breezeframework/breeze_data/breeze_data"
+	"github.com/breezeframework/breeze_data/breeze_data/prettier"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -106,7 +106,7 @@ func (pg *pg) QueryRowContextInsert(ctx context.Context, builder *sq.InsertBuild
 	return pg.api.QueryRow(ctx, query, args...)
 }
 
-func NewDB(dbc *pgxpool.Pool) db.DbApi {
+func NewDB(dbc *pgxpool.Pool) breeze_data.DbApi {
 	return &pg{
 		api: dbc,
 	}
@@ -134,7 +134,7 @@ func (pg *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, 
 	return pgxscan.ScanAll(dest, rows)
 }*/
 
-func (pg *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
+func (pg *pg) ExecContext(ctx context.Context, q breeze_data.Query, args ...interface{}) (pgconn.CommandTag, error) {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -145,7 +145,7 @@ func (pg *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) 
 	return pg.api.Exec(ctx, q.QueryRaw, args...)
 }
 
-func (pg *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{}) (pgx.Rows, error) {
+func (pg *pg) QueryContext(ctx context.Context, q breeze_data.Query, args ...interface{}) (pgx.Rows, error) {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -156,7 +156,7 @@ func (pg *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{})
 	return pg.api.Query(ctx, q.QueryRaw, args...)
 }
 
-func (pg *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{}) pgx.Row {
+func (pg *pg) QueryRowContext(ctx context.Context, q breeze_data.Query, args ...interface{}) pgx.Row {
 	logQuery(ctx, q, args...)
 
 	tx, ok := ctx.Value(TxKey).(pgx.Tx)
@@ -183,7 +183,7 @@ func MakeContextTx(ctx context.Context, tx pgx.Tx) context.Context {
 	return context.WithValue(ctx, TxKey, tx)
 }
 
-func logQuery(ctx context.Context, q db.Query, args ...interface{}) {
+func logQuery(ctx context.Context, q breeze_data.Query, args ...interface{}) {
 	prettyQuery := prettier.Pretty(q.QueryRaw, prettier.PlaceholderDollar, args...)
 	log.Println(
 		ctx,
