@@ -1,41 +1,40 @@
-package transaction
+package pg
 
 import (
 	"context"
 	"github.com/breezeframework/breeze_data/breeze_data"
-	"github.com/breezeframework/breeze_data/breeze_data/pg"
+	"github.com/breezeframework/breeze_data/breeze_data/transaction"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/pkg/errors"
 )
 
-type TransactionManager struct {
+type PgTransactionManager struct {
 	db breeze_data.Transactor
 }
 
-// NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.TransactionManager
-func NewTransactionManager(db breeze_data.Transactor) breeze_data.TxManager {
-	return &TransactionManager{
+// NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.PgTransactionManager
+func NewPgTransactionManager(db breeze_data.Transactor) *PgTransactionManager {
+	return &PgTransactionManager{
 		db: db,
 	}
 }
 
-// transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции
-func (m *TransactionManager) transaction(ctx context.Context, opts pgx.TxOptions, fn breeze_data.Handler) (err error) {
+func (m *PgTransactionManager) Transaction(ctx context.Context, opts transaction.TxOptions, fn breeze_data.TransactionalFlow) (err error) {
 	// Если это вложенная транзакция, пропускаем инициацию новой транзакции и выполняем обработчик.
-	tx, ok := ctx.Value(pg.TxKey).(pgx.Tx)
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
 	if ok {
 		return fn(ctx)
 	}
-
+	pgOpts := toPgOptions(opts)
 	// Стартуем новую транзакцию.
-	tx, err = m.db.BeginTx(ctx, opts)
+	tx, err = m.db.BeginTx(ctx, pgOpts)
 	if err != nil {
 		return errors.Wrap(err, "can't begin transaction")
 	}
 
 	// Кладем транзакцию в контекст.
-	ctx = pg.MakeContextTx(ctx, tx)
+	ctx = MakeContextTx(ctx, tx)
 
 	// Настраиваем функцию отсрочки для отката или коммита транзакции.
 	defer func() {
@@ -72,7 +71,15 @@ func (m *TransactionManager) transaction(ctx context.Context, opts pgx.TxOptions
 	return err
 }
 
-func (m *TransactionManager) ReadCommitted(ctx context.Context, f breeze_data.Handler) error {
+func toPgOptions(txOptions transaction.TxOptions) pgx.TxOptions {
+	return pgx.TxOptions{
+		IsoLevel:       pgx.TxIsoLevel(txOptions.IsoLevel),
+		AccessMode:     pgx.TxAccessMode(txOptions.AccessMode),
+		DeferrableMode: pgx.TxDeferrableMode(txOptions.DeferrableMode),
+	}
+}
+
+/*func (m *PgTransactionManager) ReadCommitted(ctx context.Context, f breeze_data.TransactionalFlow) error {
 	txOpts := pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
 	return m.transaction(ctx, txOpts, f)
-}
+}*/

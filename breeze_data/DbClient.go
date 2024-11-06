@@ -3,6 +3,7 @@ package breeze_data
 import (
 	"context"
 	"github.com/Masterminds/squirrel"
+	"github.com/breezeframework/breeze_data/breeze_data/transaction"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -10,8 +11,8 @@ import (
 // DbClient клиент для работы с БД
 type DbClient interface {
 	API() DbApi
-	InTransaction(ctx context.Context, f Handler) error
 	Close() error
+	RunTransaction(ctx context.Context, f TransactionalFlow, txOptions transaction.TxOptions) error
 }
 
 // DbApi интерфейс для работы с БД
@@ -19,15 +20,16 @@ type DbApi interface {
 	SQLExecutor
 	Transactor
 	Pinger
+
 	Close()
 }
 
-// Handler - функция, которая выполняется в транзакции
-type Handler func(ctx context.Context) error
+// TransactionalFlow - функция, которая выполняется в транзакции
+type TransactionalFlow func(ctx context.Context) error
 
 // TxManager менеджер транзакций, который выполняет указанный пользователем обработчик в транзакции
 type TxManager interface {
-	ReadCommitted(ctx context.Context, f Handler) error
+	Transaction(ctx context.Context, opts transaction.TxOptions, f TransactionalFlow) error
 }
 
 // Query обертка над запросом, хранящая имя запроса и сам запрос

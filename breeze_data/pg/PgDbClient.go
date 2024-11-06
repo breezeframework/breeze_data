@@ -3,13 +3,19 @@ package pg
 import (
 	"context"
 	"github.com/breezeframework/breeze_data/breeze_data"
+	"github.com/breezeframework/breeze_data/breeze_data/transaction"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pkg/errors"
 )
 
 type pgDbClient struct {
-	masterDBC breeze_data.DbApi
+	masterDBC          breeze_data.DbApi
+	transactionManager *PgTransactionManager
+}
+
+func (c *pgDbClient) RunTransaction(ctx context.Context, f breeze_data.TransactionalFlow, txOpts transaction.TxOptions) error {
+	return c.transactionManager.Transaction(ctx, txOpts, f)
 }
 
 func NewPgDBClient(ctx context.Context, dsn string) (breeze_data.DbClient, error) {
@@ -19,7 +25,8 @@ func NewPgDBClient(ctx context.Context, dsn string) (breeze_data.DbClient, error
 	}
 
 	return &pgDbClient{
-		masterDBC: &pg{api: dbc},
+		masterDBC:          &pg{api: dbc},
+		transactionManager: NewPgTransactionManager(dbc),
 	}, nil
 }
 
