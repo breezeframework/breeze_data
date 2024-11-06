@@ -12,7 +12,7 @@ import (
 type DbClient interface {
 	API() DbApi
 	Close() error
-	RunTransaction(ctx context.Context, f TransactionalFlow, txOptions transaction.TxOptions) error
+	RunTransaction(ctx context.Context, txOptions transaction.TxOptions, f TransactionalFlow) error
 }
 
 // DbApi интерфейс для работы с БД

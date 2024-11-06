@@ -14,7 +14,7 @@ type pgDbClient struct {
 	transactionManager *PgTransactionManager
 }
 
-func (c *pgDbClient) RunTransaction(ctx context.Context, f breeze_data.TransactionalFlow, txOpts transaction.TxOptions) error {
+func (c *pgDbClient) RunTransaction(ctx context.Context, txOpts transaction.TxOptions, f breeze_data.TransactionalFlow) error {
 	return c.transactionManager.Transaction(ctx, txOpts, f)
 }
 
