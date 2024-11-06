@@ -10,6 +10,7 @@ import (
 // DbClient клиент для работы с БД
 type DbClient interface {
 	API() DbApi
+	InTransaction(ctx context.Context, f Handler) error
 	Close() error
 }
 
